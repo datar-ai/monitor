@@ -47,7 +47,7 @@ def get_devices():
         minor = int(call(nvmlDeviceGetMinorNumber, handle))
         serial = call(nvmlDeviceGetSerial, handle)
         if serial is None:
-            serial = 'N/A';
+            serial = 'N/A'
         else:
             serial = serial.decode()
         name = call(nvmlDeviceGetName, handle).decode()
