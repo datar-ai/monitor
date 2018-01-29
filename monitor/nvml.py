@@ -45,7 +45,11 @@ def get_devices():
         handle = nvmlDeviceGetHandleByIndex(i)
         pci = call(nvmlDeviceGetPciInfo, handle)
         minor = int(call(nvmlDeviceGetMinorNumber, handle))
-        serial = call(nvmlDeviceGetSerial, handle).decode()
+        serial = call(nvmlDeviceGetSerial, handle)
+        if serial is None:
+            serial = 'N/A';
+        else:
+            serial = serial.decode()
         name = call(nvmlDeviceGetName, handle).decode()
         mem = call(nvmlDeviceGetMemoryInfo, handle)
         index = int(call(nvmlDeviceGetIndex, handle))   
@@ -71,7 +75,13 @@ def get_power_stats(handle):
 
 
 def get_device_stats(handle, bus_id, name):
-    util = call(nvmlDeviceGetUtilizationRates, handle)
+    try:
+        util = call(nvmlDeviceGetUtilizationRates, handle)+
+        util_gpu = util.gpu
+        util_memory = util.memory
+    except NVMLError:
+        util_gpu = 0
+        util_memory = 0
     mem = call(nvmlDeviceGetMemoryInfo, handle)
     power = get_power_stats(handle)
     return {
@@ -79,12 +89,12 @@ def get_device_stats(handle, bus_id, name):
             'device_bus_id': bus_id,
             'device_minor': int(call(nvmlDeviceGetMinorNumber, handle)),
             'temperature': call(nvmlDeviceGetTemperature, handle, NVML_TEMPERATURE_GPU),
-            'gpu_utilization': util.gpu,
+            'gpu_utilization': util_gpu,
             'memory_free': mem.free,
             'power_draw': power['draw'],
             'power_limit': power['limit'],
             'memory_total': mem.total,
             'memory_used': mem.used,
-            'memory_utilization': util.memory,
+            'memory_utilization': util_memory,
             'fan_speed': call(nvmlDeviceGetFanSpeed, handle)
             }
