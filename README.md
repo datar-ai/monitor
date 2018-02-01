@@ -1,7 +1,21 @@
-# RiseML Kubernetes Monitor
+# About
 
-This component monitors new PODs on a node and publishes utilization stats of PODs to a queue.
-Using the NVML library it reports detailed GPU statistics like temperature and additional information like the used NVIDIA driver version and exact model and serial number of installed GPUs.
+This component monitors new Pods on a node and publishes CPU/MEM/GPU utilization stats to a queue.
+It runs as a daemonset on each node.
+Using the NVML library it reports detailed GPU statistics like temperature and power consumption.
+
+## Development
+
+RiseML welcomes contributions from all developers. The high level process for development matches many other open source projects. See below for an outline.
+
+- Fork this repository
+- Make your changes
+- Submit a pull request (PR) to this repository with your changes, and unit tests whenever possible.
+- The RiseML core contributors will review your code. After they sign off on your code, they'll label your PR with LGTM. Once that happens, the contributors will merge it.
+
+## Environment Variables
+
+Please check [config.py](https://github.com/riseml/monitor/blob/master/monitor/config.py). It contains all environment variables used.
 
 ## Published Node Information
 
