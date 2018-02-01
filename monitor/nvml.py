@@ -76,7 +76,7 @@ def get_power_stats(handle):
 
 def get_device_stats(handle, bus_id, name):
     try:
-        util = call(nvmlDeviceGetUtilizationRates, handle)+
+        util = call(nvmlDeviceGetUtilizationRates, handle)
         util_gpu = util.gpu
         util_memory = util.memory
     except NVMLError:
