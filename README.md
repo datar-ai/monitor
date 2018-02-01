@@ -3,8 +3,6 @@
 This component monitors new Pods on a node and publishes CPU/MEM/GPU utilization stats to a queue.
 It runs as a daemonset on each node.
 Using the NVML library it reports detailed GPU statistics like temperature and power consumption.
-The information is used by the [loghandler](https://github.com/riseml/loghandler) to stream it to clients.
-Node information (number and type of CPUs and GPUs, NVIDIA driver version) is also pushed regularly to the [api](https://github.com/riseml/api).
 
 ## Development
 
