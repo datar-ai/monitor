@@ -21,6 +21,7 @@ class GPUMonitor(threading.Thread):
         super(GPUMonitor, self).__init__()
         self.monitors = monitors
         self.devices = nvml.get_devices()
+        self.devicesByUUID = { device['uuid']: device for device in self.devices.values() }
         self.stop = False
         self.stats_queue = stats_queue
         self.daemon = True
@@ -32,8 +33,11 @@ class GPUMonitor(threading.Thread):
                 with monitors_lock:
                     for c_id, (job_id, gpus) in self.monitors.items():
                         gpus_stats = {}
-                        for gpu_in_h, gpu_in_c in gpus:
-                            dev = self.devices[gpu_in_h]
+                        for gpu_in_h, gpu_in_c, gpu_uuid in gpus:
+                            if gpu_uuid:
+                                dev = self.devicesByUUID[gpu_uuid]
+                            else:
+                                dev = self.devices[gpu_in_h]
                             stats = nvml.get_device_stats(dev['handle'], dev['bus_id'],
                                                         dev['name'])
                             gpus_stats[gpu_in_c] = stats
@@ -56,11 +60,28 @@ def stop_container_monitors(container_ids):
 
 
 def get_container_gpus(container_id):
+    # TODO: Actually we should look for the GPUs in /sys/fs/cgroup/devices/[cname]/devices.list,
+    # like cAdvisor does. But that's probably not the worth the hassle right now
     gpus = []
-    devices = docker_client.api.inspect_container(container_id)['HostConfig']['Devices']
-    for dev in devices:
-        if re.match(r'/dev/nvidia[0-9]+', dev['PathOnHost']):
-            gpus.append((dev['PathOnHost'], dev['PathInContainer']))
+    container = docker_client.api.inspect_container(container_id)
+    devices = container['HostConfig']['Devices']
+    # First, try to look at nvidia-docker's environment variable
+    environment = container["Config"]["Env"]
+    for variable_definition in environment:
+        nameAndValue = variable_definition.split('=')
+        if nameAndValue[0] == 'NVIDIA_VISIBLE_DEVICES':
+            for device_uuid in nameAndValue[1].split(','):
+                if device_uuid == 'all':
+                    # Ignore 'all' default setting; This should never arrive here because our
+                    # scheduler explicitly limits gpus to 0 when none are requested
+                    break
+                gpus.append((None, None, device_uuid))
+            break
+    # If nothing was found, fallback to looking at docker's device list
+    if not gpus:
+        for dev in devices:
+            if re.match(r'/dev/nvidia[0-9]+', dev['PathOnHost']):
+                gpus.append((dev['PathOnHost'], dev['PathInContainer'], None))
     return gpus
 
 
